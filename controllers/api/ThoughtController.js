@@ -1,4 +1,4 @@
-const {Thought} = require('../../models')
+const {Thought, User} = require('../../models')
 
 module.exports.getAllThoughts = (req, res) => {
     Thought.find({}, (err, thoughts) => {
@@ -15,21 +15,42 @@ module.exports.getThoughtById = (req, res) => {
 module.exports.createThought = (req, res) => {
     const thought = new Thought(req.body)
     thought.save((err) => {
-        res.json(thought)
+        let push = {
+            $push: {
+                thoughts: [thought.id],
+            }
+        }
+        User.findByIdAndUpdate(req.body.userId, push, (err, user) => {
+            User.findById(req.body.userId, (err, user) => {
+                res.json(thought)
+            })
+        })
     })
 }
 
 module.exports.updateThought = (req, res) => {
     Thought.findByIdAndUpdate(req.params.id, req.body, (err, thought) => {
-        Thought.findById(req.params.id, (err, thought) => {
-            res.json(thought)
+        User.findByIdAndUpdate(req.body.userId, pull, (err, user) => {
+            User.findById(req.body.userId, (err, user) => {
+                res.json(thought)
+            })
         })
     })
 }
 
 module.exports.deleteThought = (req, res) => {
     Thought.findByIdAndDelete(req.params.id, (err, thought) => {
-        res.json({"deleted": true})
+        let pull = {
+            $pull: {
+                thoughts: {'_id': req.params.thought_id},
+            }
+        }
+    
+        User.findByIdAndUpdate(req.body.userId, pull, (err, user) => {
+            User.findById(req.body.userId, (err, user) => {
+                res.json(thought)
+            })
+        })
     })
 }
 
